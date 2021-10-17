@@ -1,0 +1,2 @@
+./automaton.jff --run 010
+./automaton.jff --convert convertedAutomaton.jff
