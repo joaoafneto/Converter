@@ -1,36 +1,34 @@
 package com.code.afdn;
-
 import java.util.logging.Logger;
-
-import com.code.afdn.xml.XmlLoader;
+import com.code.afdn.xml.XmlReader;
 import com.code.afdn.xml.XmlWriter;
 
 public class App {
-    private final XmlLoader xmlLoader = new XmlLoader();
+    private final XmlReader xmlReader = new XmlReader();
     private final XmlWriter xmlWriter = new XmlWriter();
 
     private Automaton getAutomaton(String filename) {
-        return xmlLoader.loadAutomatonFromFile(filename);
+        return xmlReader.readAutomatonFromFile(filename);
     }
 
-    private void runAutomaton(Automaton automaton, String sentence) {
+    private void executeAutomaton(Automaton automaton, String word) {
         Logger.getLogger(App.class.getName()).info("Running automaton...");
-        if (automaton.run(sentence)) {
-            Logger.getLogger(App.class.getName()).info("The sentence is ACCEPTED by the Automaton!");
+        if (automaton.execute(word)) {
+            Logger.getLogger(App.class.getName()).info("The word is VALID!");
         } else {
-            Logger.getLogger(App.class.getName()).info("The sentence is REFUSED by the Automaton!");
+            Logger.getLogger(App.class.getName()).info("The word is INVALID!");
         }
     }
 
     private void convertAutomaton(Automaton automaton, String fileName) {
         Logger.getLogger(App.class.getName()).info("Converting automaton...");
 
-        Automaton newAutomaton = automaton.convert();
+        Automaton convertedAutomaton = automaton.convert();
 
         Logger.getLogger(App.class.getName())
-                .info("Successfully converted automaton! Result: " + newAutomaton.toString());
+                .info("Successfully converted automaton! Result: " + convertedAutomaton.toString());
 
-        xmlWriter.generateDocument(newAutomaton, fileName);
+        xmlWriter.createDocument(convertedAutomaton, fileName);
     }
 
     public static void main(String[] args) {
@@ -46,13 +44,13 @@ public class App {
             String parameter = args[1].replace("-", "");
 
             switch (parameter) {
-                case "run":
+                case "execute":
                     String sentence = args[2];
-                    app.runAutomaton(automaton, sentence);
+                    app.executeAutomaton(automaton, sentence);
                     break;
 
                 case "convert":
-                    String fileName = "newAutomaton.jff";
+                    String fileName = "convertedAutomaton.jff";
 
                     if (args.length >= 3)
                         fileName = args[2];
@@ -62,12 +60,12 @@ public class App {
 
                 default:
                     Logger.getLogger(App.class.getName()).warning(
-                            "No valid option was specified. Please use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'newAutomaton.jff or pass a different name'");
+                            "No valid option was specified. Please use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'convertedAutomaton.jff or pass a different name'");
                     break;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             Logger.getLogger(App.class.getName()).warning(
-                    "None or invalid arguments specified. Please provide a path for a file followed by a run option. Use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'newAutomaton.jff, or pass a different name'");
+                    "None or invalid arguments specified. Please provide a path for a file followed by a run option. Use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'convertedAutomaton.jff, or pass a different name'");
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName())
                     .warning("An unhandled error occurred. Terminating program." + ex.getMessage());

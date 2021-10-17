@@ -1,8 +1,6 @@
 package com.code.afdn.xml;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 

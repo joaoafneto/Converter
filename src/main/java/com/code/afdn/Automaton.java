@@ -1,5 +1,4 @@
 package com.code.afdn;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,26 +30,26 @@ public class Automaton {
         return this.states.values().stream().filter(x -> x.isInitial()).findFirst().orElse(null).id;
     };
 
-    public boolean run(String sentence) {
+    public boolean execute(String sentence) {
         Set<Integer> currentStates = new TreeSet<Integer>();
 
         currentStates.add(getInitialState());
 
         for (Character character : sentence.toCharArray()) {
-            Set<Integer> nextStates = new TreeSet<Integer>();
+            Set<Integer> states = new TreeSet<Integer>();
 
             for (Integer state : currentStates) {
                 if (transitions.containsKey(state)) {
                     if (transitions.get(state).containsKey(character.toString())) {
-                        nextStates.addAll(transitions.get(state).get(character.toString()));
+                        states.addAll(transitions.get(state).get(character.toString()));
                     }
                 }
             }
 
-            if (nextStates.isEmpty())
+            if (states.isEmpty())
                 return false;
 
-            currentStates = nextStates;
+            currentStates = states;
         }
 
         for (Integer stateId : currentStates) {
@@ -61,17 +60,17 @@ public class Automaton {
         return false;
     }
 
-    private List<State> findPossibleNextStates(Integer stateId, Character transitionCharacter) {
+    private List<State> findPossibleNextStates(Integer stateId, Character character) {
         if (!transitions.containsKey(stateId)) {
             return null;
         }
 
-        List<Integer> possibleStates = transitions.get(stateId).get(transitionCharacter.toString());
+        List<Integer> states = transitions.get(stateId).get(character.toString());
 
-        if (possibleStates != null) {
-            List<State> possibleNextStates = this.states.values().stream()
-                    .filter(currentState -> possibleStates.contains(currentState.id)).toList();
-            return possibleNextStates;
+        if (states != null) {
+            List<State> nextStates = this.states.values().stream()
+                    .filter(currentState -> states.contains(currentState.id)).toList();
+            return nextStates;
         }
 
         return null;
@@ -98,14 +97,13 @@ public class Automaton {
             return StateType.Final;
         }
 
-        return StateType.Normal;
+        return StateType.Default;
     }
 
-    public Integer compareInnerState(HashMap<Integer, State> newStates, List<State> stateList) {
+    public Integer compareState(HashMap<Integer, State> newStates, List<State> stateList) {
         for (int i = 0; i < newStates.entrySet().size(); i++) {
             Map.Entry<Integer, State> newState = new ArrayList<>(newStates.entrySet()).get(i);
-
-            List<State> innerStates = newState.getValue().innerStates;
+            List<State> innerStates = newState.getValue().states;
 
             if (innerStates.containsAll(stateList) && stateList.containsAll(innerStates)) {
                 return newState.getValue().id;
@@ -117,56 +115,65 @@ public class Automaton {
 
     public Automaton convert() {
         HashMap<Integer, State> newStates = new HashMap<Integer, State>();
-        Map<Integer, TreeMap<String, List<Integer>>> newTransitions = new TreeMap<Integer, TreeMap<String, List<Integer>>>();
-
+        Map<Integer, TreeMap<String, List<Integer>>> transitions = new TreeMap<Integer, TreeMap<String, List<Integer>>>();
         Integer currentId = 0;
-
         State initialState = states.get(getInitialState());
+
         newStates.put(currentId,
                 new State(currentId, initialState.name, StateType.Initial, Arrays.asList(initialState)));
 
         for (int i = 0; i < newStates.entrySet().size(); i++) {
-            Map.Entry<Integer, State> newState = new ArrayList<>(newStates.entrySet()).get(i);
+            Map.Entry<Integer, State> state = new ArrayList<>(newStates.entrySet()).get(i);
 
             for (Character character : alphabet.replaceAll(",", "").toCharArray()) {
-                List<State> possibleNextStates = new ArrayList<State>();
+                List<State> nextStates = new ArrayList<State>();
 
-                for (State innerState : newState.getValue().innerStates) {
-                    List<State> possibleStatesList = findPossibleNextStates(innerState.id, character);
-
-                    if (possibleStatesList != null)
-                        possibleNextStates.addAll(possibleStatesList);
-                }
-
-                if (possibleNextStates.size() > 0) {
-                    Integer idIfAlreadyExists = compareInnerState(newStates, possibleNextStates);
-
-                    if (idIfAlreadyExists >= 0) {
-                        if (!newTransitions.containsKey(newState.getKey()))
-                            newTransitions.put(newState.getKey(), new TreeMap<String, List<Integer>>());
-
-                        if (!newTransitions.get(newState.getKey()).containsKey(character.toString()))
-                            newTransitions.get(newState.getKey()).put(character.toString(), new ArrayList<Integer>());
-
-                        newTransitions.get(newState.getKey()).get(character.toString()).add(idIfAlreadyExists);
-                    } else {
-                        State stateToAdd = new State(++currentId, getStateNames(possibleNextStates),
-                                isFinalState(possibleNextStates), possibleNextStates);
-
-                        newStates.put(stateToAdd.id, stateToAdd);
-
-                        if (!newTransitions.containsKey(newState.getKey()))
-                            newTransitions.put(newState.getKey(), new TreeMap<String, List<Integer>>());
-
-                        if (!newTransitions.get(newState.getKey()).containsKey(character.toString()))
-                            newTransitions.get(newState.getKey()).put(character.toString(), new ArrayList<Integer>());
-
-                        newTransitions.get(newState.getKey()).get(character.toString()).add(stateToAdd.id);
-                    }
-                }
+                currentId = getId(newStates, transitions, currentId, state, character, nextStates);
             }
         }
 
-        return new Automaton(newStates, newTransitions, alphabet);
+        return new Automaton(newStates, transitions, alphabet);
+    }
+
+    private Integer getId(HashMap<Integer, State> newStates,
+            Map<Integer, TreeMap<String, List<Integer>>> transitions, Integer currentId,
+            Map.Entry<Integer, State> state, Character character, List<State> nextStates) {
+        for (State innerState : state.getValue().states) {
+            List<State> possibleStatesList = findPossibleNextStates(innerState.id, character);
+
+            if (possibleStatesList != null)
+                nextStates.addAll(possibleStatesList);
+        }
+
+        if (nextStates.size() > 0) {
+            Integer idExists = compareState(newStates, nextStates);
+
+            if (idExists >= 0) {
+                findId(transitions, state, character);
+
+                transitions.get(state.getKey()).get(character.toString()).add(idExists);
+            } 
+            else {
+                State stateToAdd = new State(++currentId, getStateNames(nextStates),
+                        isFinalState(nextStates), nextStates);
+
+                newStates.put(stateToAdd.id, stateToAdd);
+
+                findId(transitions, state, character);
+
+                transitions.get(state.getKey()).get(character.toString()).add(stateToAdd.id);
+            }
+        }
+
+        return currentId;
+    }
+
+    private void findId(Map<Integer, TreeMap<String, List<Integer>>> transitions, Map.Entry<Integer, State> state,
+            Character character) {
+        if (!transitions.containsKey(state.getKey()))
+            transitions.put(state.getKey(), new TreeMap<String, List<Integer>>());
+
+        if (!transitions.get(state.getKey()).containsKey(character.toString()))
+            transitions.get(state.getKey()).put(character.toString(), new ArrayList<Integer>());
     }
 }

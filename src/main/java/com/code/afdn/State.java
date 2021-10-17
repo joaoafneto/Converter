@@ -5,8 +5,8 @@ import java.util.List;
 public class State implements Comparable<State> {
     public int id;
     public String name;
-    public StateType type = StateType.Normal;
-    public List<State> innerStates;
+    public StateType type = StateType.Default;
+    public List<State> states;
 
     public State(int id, String name, StateType type) {
         this.id = id;
@@ -14,11 +14,11 @@ public class State implements Comparable<State> {
         this.type = type;
     }
 
-    public State(int id, String name, StateType type, List<State> innerStates) {
+    public State(int id, String name, StateType type, List<State> states) {
         this.id = id;
         this.name = name;
         this.type = type;
-        this.innerStates = innerStates;
+        this.states = states;
     }
 
     public boolean isInitial() {
