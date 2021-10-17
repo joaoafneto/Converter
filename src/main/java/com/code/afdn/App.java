@@ -21,12 +21,7 @@ public class App {
     }
 
     private void convertAutomaton(Automaton automaton, String fileName) {
-        Logger.getLogger(App.class.getName()).info("Converting automaton...");
-
         Automaton convertedAutomaton = automaton.convert();
-
-        Logger.getLogger(App.class.getName())
-                .info("Successfully converted automaton! Result: " + convertedAutomaton.toString());
 
         xmlWriter.createDocument(convertedAutomaton, fileName);
     }
@@ -38,8 +33,6 @@ public class App {
             Logger.getLogger(App.class.getName()).info("Reading automaton from file...");
 
             Automaton automaton = app.getAutomaton(args[0]);
-
-            Logger.getLogger(App.class.getName()).info("Automaton successfully read!\n " + automaton.toString());
 
             String parameter = args[1].replace("-", "");
 
@@ -60,15 +53,15 @@ public class App {
 
                 default:
                     Logger.getLogger(App.class.getName()).warning(
-                            "No valid option was specified. Please use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'convertedAutomaton.jff or pass a different name'");
+                            "No valid option was specified. Please use a valid option");
                     break;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             Logger.getLogger(App.class.getName()).warning(
-                    "None or invalid arguments specified. Please provide a path for a file followed by a run option. Use --run with a sentence for input (--run 1000, for example), or --convert to convert to an FDA and save to 'convertedAutomaton.jff, or pass a different name'");
+                    "None or invalid arguments specified. Please provide a valid arguments.");
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName())
-                    .warning("An unhandled error occurred. Terminating program." + ex.getMessage());
+                    .warning("An unhandled error occurred." + ex.getMessage());
         }
     }
 }
